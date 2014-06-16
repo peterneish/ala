@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Leaflet ALA WMS</title>
+	<meta charset="utf-8" />
+
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+	 <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+        html, body, #map {
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+	<div id="map" ></div>
+
+	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+	<script src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
+	<script>
+
+		var map = L.map('map').setView([-29, 136], 5);
+
+		L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
+			maxZoom: 18,
+			attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, ' +
+				'<a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+				'Imagery © <a href="http://mapbox.com">Mapbox</a>',
+			id: 'examples.map-i86knfo3'
+		}).addTo(map);
+
+
+	function getColour(d, max){
+		var interval = max / 8;
+		
+	    return d > max - interval ? '#800026' :
+           d > interval * 2  ? '#BD0026' :
+           d > interval * 3  ? '#E31A1C' :
+           d > interval * 4  ? '#FC4E2A' :
+           d > interval * 5  ? '#FD8D3C' :
+           d > interval * 6  ? '#FEB24C' :
+           d > interval * 7  ? '#FED976' :
+                      '#FFEDA0';
+		
+	}
+
+	var sld = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle><Rule><Filter><PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName><Literal>Queensland<%2FLiteral><%2FPropertyIsEqualTo><%2FFilter><PolygonSymbolizer><Fill><CssParameter%20name%3D"fill">%23000080<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule><Rule><Filter><PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName><Literal>New%20South%20Wales<%2FLiteral><%2FPropertyIsEqualTo><%2FFilter><PolygonSymbolizer><Fill><CssParameter%20name%3D"fill">%23FF0000<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule><%2FFeatureTypeStyle><%2FUserStyle><%2FNamedLayer><%2FStyledLayerDescriptor>';
+	
+	// now get the ALA data - say Eucalypts
+	$.ajax({
+		url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=genus:Eucalyptus and year:2000&flimit=500&facets=state&callback=?',
+		type: 'GET',
+		dataType: 'jsonp',
+		success: function(json){
+			console.log(json.facetResults[0].fieldResult);
+
+			var sldbuild = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle><Rule><Filter>';
+ 			var colours;	
+			var max = 0;
+			$.each(json.facetResults[0].fieldResult, function(index,value){
+				//console.log(value.label + ":" +value.count);		
+				// work out the colours and add to colours
+				if(value.count > max){
+					max = value.count;
+				}
+				var thiscolour = getColour(value.count, max);
+
+				
+			});	
+			
+		var mywms = L.tileLayer.wms('http://spatial.ala.org.au/geoserver/wms/reflect?sld_body=' + sld, {
+		layers: 'ALA:aus1',
+		format: 'image/png',
+		opacity: 0.3,
+		styles: '',
+		transparent: true,
+		version: '1.1.0',
+		attribution: "Atlas of Living Australia"
+	});
+	mywms.addTo(map);
+				
+		},
+		error: function(e){
+			console.log(e.message);
+		}	
+	});
+	
+
+	</script>
+</body>
+</html>
