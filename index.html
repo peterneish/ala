@@ -36,21 +36,45 @@
 		}).addTo(map);
 
 
+
+	function getColor(d,max){
+		return '%23FD8D3C';
+	}
 	function getColour(d, max){
-		var interval = max / 8;
+		console.log("got: " + d + ", " + max);
 		
-	    return d > max - interval ? '#800026' :
-           d > interval * 2  ? '#BD0026' :
-           d > interval * 3  ? '#E31A1C' :
-           d > interval * 4  ? '#FC4E2A' :
-           d > interval * 5  ? '#FD8D3C' :
-           d > interval * 6  ? '#FEB24C' :
-           d > interval * 7  ? '#FED976' :
-                      '#FFEDA0';
+	    return d > 8000 ? '%23800026' :
+           d > 3000  ? '%23BD0026' :
+           d > 2000   ? '%23c31A1C' :
+           d > 1000  ? '%23FC4E2A' :
+           d > 100   ? '%23FD8D3C' :
+           d > 10  ? '%23FEB24C' :
+           d > 1  ? '%23FED976' :
+                      '%23FFEDA0';
 		
 	}
 
-	var sld = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle><Rule><Filter><PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName><Literal>Queensland<%2FLiteral><%2FPropertyIsEqualTo><%2FFilter><PolygonSymbolizer><Fill><CssParameter%20name%3D"fill">%23000080<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule><Rule><Filter><PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName><Literal>New%20South%20Wales<%2FLiteral><%2FPropertyIsEqualTo><%2FFilter><PolygonSymbolizer><Fill><CssParameter%20name%3D"fill">%23FF0000<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule><%2FFeatureTypeStyle><%2FUserStyle><%2FNamedLayer><%2FStyledLayerDescriptor>';
+	function makeSLD(a){
+		var s = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle>';
+		var max=0;
+		$.each(a, function(index,value){
+				if(value.count > max){
+					max = value.count;
+				}
+		});	
+
+		$.each(a, function(index,value){
+			s += '<Rule><Filter><PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName>';
+			s += '<Literal>' + value.label + '<%2FLiteral><%2FPropertyIsEqualTo><%2FFilter>';	
+			s += '<PolygonSymbolizer><Fill><CssParameter name="fill">' + getColour(value.count, max) + '';
+			s += '<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule>';
+		});	
+
+		s += '<%2FFeatureTypeStyle><%2FUserStyle><%2FNamedLayer><%2FStyledLayerDescriptor>';
+
+		return s;
+	}
+
 	
 	// now get the ALA data - say Eucalypts
 	$.ajax({
@@ -59,31 +83,18 @@
 		dataType: 'jsonp',
 		success: function(json){
 			console.log(json.facetResults[0].fieldResult);
-
-			var sldbuild = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle><Rule><Filter>';
- 			var colours;	
-			var max = 0;
-			$.each(json.facetResults[0].fieldResult, function(index,value){
-				//console.log(value.label + ":" +value.count);		
-				// work out the colours and add to colours
-				if(value.count > max){
-					max = value.count;
-				}
-				var thiscolour = getColour(value.count, max);
-
-				
-			});	
+			var sld = makeSLD(json.facetResults[0].fieldResult);
 			
-		var mywms = L.tileLayer.wms('http://spatial.ala.org.au/geoserver/wms/reflect?sld_body=' + sld, {
-		layers: 'ALA:aus1',
-		format: 'image/png',
-		opacity: 0.3,
-		styles: '',
-		transparent: true,
-		version: '1.1.0',
-		attribution: "Atlas of Living Australia"
-	});
-	mywms.addTo(map);
+			var mywms = L.tileLayer.wms('http://spatial.ala.org.au/geoserver/wms/reflect?sld_body=' + sld, {
+			layers: 'ALA:aus1',
+			format: 'image/png',
+			opacity: 0.7,
+			styles: '',
+			transparent: true,
+			version: '1.1.0',
+			attribution: "Atlas of Living Australia"
+			});
+			mywms.addTo(map);
 				
 		},
 		error: function(e){
