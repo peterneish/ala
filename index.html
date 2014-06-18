@@ -53,8 +53,10 @@
 	}
 
 	function makeSLD(a){
-		var s = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>ALA%3Aaus1<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle>';
 		
+		
+		var s = '<%3Fxml+version%3D"1.0"+encoding%3D"UTF-8"%3F><StyledLayerDescriptor+version%3D"1.0.0"+xmlns%3D"http%3A%2F%2Fwww.opengis.net%2Fsld"><NamedLayer><Name>';
+		s += encodeURIComponent(maplayer) + '<%2FName><UserStyle><Title><%2FTitle><FeatureTypeStyle>';
 		
 		// work out our max
 		var max=0;
@@ -86,11 +88,10 @@
 			s += '<Or>';
 			
 			for ( var f in filters[key] ){
-				s += '<PropertyIsEqualTo><PropertyName>name_1<%2FPropertyName>';
+				s += '<PropertyIsEqualTo><PropertyName>' + property + '<%2FPropertyName>';
 				s += '<Literal>';
 				s += filters[key][f];
 				s += '<%2FLiteral><%2FPropertyIsEqualTo>';
-				//if (f > 3) { break ;}
 			}
 
 			
@@ -98,7 +99,6 @@
 			s += '<%2FFilter>';
 			s += '<PolygonSymbolizer><Fill><CssParameter name="fill">' + key + '';
 			s += '<%2FCssParameter><%2FFill><%2FPolygonSymbolizer><%2FRule>';
-			
 			//break;
 		}
 
@@ -109,10 +109,13 @@
 		return s;
 	}
 
+	var facet = "state";
+	var property = "name_1";
+	var maplayer   = "ALA:aus1";
 	
 	// now get the ALA data - say Eucalypts
 	$.ajax({
-		url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=genus:Eucalyptus and year:1983&flimit=500&facets=state&callback=?',
+		url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=genus:Eucalyptus and year:1983&flimit=500&facets=' + facet + '&callback=?',
 		type: 'GET',
 		dataType: 'jsonp',
 		success: function(json){
@@ -120,7 +123,7 @@
 			var sld = makeSLD(json.facetResults[0].fieldResult);
 			
 			var mywms = L.tileLayer.wms('http://spatial.ala.org.au/geoserver/wms/reflect?sld_body=' + sld, {
-			layers: 'ALA:aus1',
+			layers: maplayer,
 			format: 'image/png',
 			opacity: 0.7,
 			styles: '',
