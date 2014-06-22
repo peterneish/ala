@@ -35,6 +35,9 @@
 	var search = "rubus";
 	var step_value = 10;
 	var facet_value;
+	//var initial_facet = 'decade';
+	var initial_facet = 'year';
+	
 
 	var map = L.map('map').setView([-29, 136], 4);
 	var l;
@@ -48,7 +51,9 @@
 
         	// now get the ALA data - say Eucalypts
         $.ajax({
-               	url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=' + search + '&flimit=5&facets=decade&fsort=index&callback=?',
+               	url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=' + search 
+		     + '&facets=' + initial_facet 
+		     + '&fsort=index&callback=?' + '&flimit=200', 
                	type: 'GET',
                 dataType: 'jsonp',
                 success: function(json){
