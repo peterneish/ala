@@ -32,11 +32,11 @@
 	<script>
 
 
-	var search = "rubus";
+	var search = "macropus";
 	var step_value = 10;
 	var facet_value;
-	//var initial_facet = 'decade';
-	var initial_facet = 'year';
+	var initial_facet = 'decade';
+	//var initial_facet = 'year';
 	
 
 	var map = L.map('map').setView([-29, 136], 4);
@@ -83,12 +83,23 @@
 		    		outline:"true",
 		    		ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
 			});
+			
+			// set the initial view to the earliest facet (year / decade)
+			l.setParams({ 
+				q: search 
+				+ ' and ' + facet_value + ":" 
+				+ timeline_values[0] });	
+			$("#current_filter").text(timeline_values[0]);
+			
 			l.addTo(map);		
 
 
 			$("#slider").slider({max: timeline_values.length -1,
 					     min: 0, 
 					     step: 1,
+					     slide: function(event, ui){
+						$("#current_filter").text(timeline_values[ui.value]);
+					     },
 					     change: function(event, ui){
 							l.setParams({ 
 								q: search 
