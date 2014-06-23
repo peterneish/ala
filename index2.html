@@ -9,15 +9,9 @@
 	<link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
 	<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
 	 <style>
-        body {
-            padding: 0;
-            margin: 0;
-        }
-        html, body, #map {
-            height: 90%;
-            width: 100%;
-        }
-	#slider { margin:10px; }
+        body {  padding: 0; margin: 0; }
+        html, body, #map { height: 95%; width: 100%; }
+		#slider { margin:10px; }
     </style>
 </head>
 <body>
@@ -33,86 +27,77 @@
 
 
 	var search = "macropus";
-	var step_value = 10;
 	var facet_value;
 	var initial_facet = 'decade';
 	//var initial_facet = 'year';
 	
-
 	var map = L.map('map').setView([-29, 136], 4);
 	var l;
-
+	
+	// add the base layer
 	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
 		maxZoom: 18,
 		attribution: 'Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a>',
 		id: 'examples.map-i86knfo3'
 	}).addTo(map);
 
-
         	// now get the ALA data - say Eucalypts
         $.ajax({
-               	url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=' + search 
-		     + '&facets=' + initial_facet 
-		     + '&fsort=index&callback=?' + '&flimit=200', 
-               	type: 'GET',
-                dataType: 'jsonp',
-                success: function(json){
+            url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=' + search 
+				+ '&facets=' + initial_facet 
+				+ '&fsort=index&callback=?' + '&flimit=200', 
+            type: 'GET',
+            dataType: 'jsonp',
+            success: function(json){
                         console.log(json.facetResults[0]);
 
-			// the last dateA
-			var earliest  = json.facetResults[0].fieldResult[0].label;
-			var latest  = json.facetResults[0].fieldResult[json.facetResults[0].fieldResult.length-2].label;
-			earliest = Number(earliest.match(/(\d{4})/)[0]);
-			latest = Number(latest.match(/(\d{4})/)[0]);
+				// put the labels into an array for easier handling			
+				timeline_values = [];
+				for (var x in json.facetResults[0].fieldResult){
+					timeline_values.push(json.facetResults[0].fieldResult[x].label);
+				}
 
-			timeline_values = [];
-			for (var x in json.facetResults[0].fieldResult){
-				timeline_values.push(json.facetResults[0].fieldResult[x].label);
+				facet_value = json.facetResults[0].fieldName;
+				
+				l = L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect", {
+					layers: 'ALA:occurrences',
+					q: search,
+						format: 'image/png',
+						transparent: true,
+						attribution: "Atlas of Living Australia",
+						bgcolor:"0x000000",
+						outline:"true",
+						ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
+				});
+				
+				// set the initial view to the earliest facet (year / decade)
+				l.setParams({ 
+					q: search 
+					+ ' and ' + facet_value + ":" 
+					+ timeline_values[0] });	
+				$("#current_filter").text(timeline_values[0]);
+				
+				l.addTo(map);		
+
+				$("#slider").slider(
+					{  max: timeline_values.length -1,
+					   min: 0, 
+					   step: 1,
+					   slide: function(event, ui){
+								$("#current_filter").text(timeline_values[ui.value]);
+							},
+					   change: function(event, ui){
+									l.setParams({ 
+										q: search 
+										+ ' and ' + facet_value + ":" 
+										+ timeline_values[ui.value] });	
+			
+									$("#current_filter").text(timeline_values[ui.value]);
+
+					   }
+					}
+				);
 			}
-
-			facet_value = json.facetResults[0].fieldName;
-
-			
-			l = L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect", {
-				layers: 'ALA:occurrences',
-		  		q: search,
-		    		format: 'image/png',
-		    		transparent: true,
-		    		attribution: "Atlas of Living Australia",
-		    		bgcolor:"0x000000",
-		    		outline:"true",
-		    		ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
-			});
-			
-			// set the initial view to the earliest facet (year / decade)
-			l.setParams({ 
-				q: search 
-				+ ' and ' + facet_value + ":" 
-				+ timeline_values[0] });	
-			$("#current_filter").text(timeline_values[0]);
-			
-			l.addTo(map);		
-
-
-			$("#slider").slider({max: timeline_values.length -1,
-					     min: 0, 
-					     step: 1,
-					     slide: function(event, ui){
-						$("#current_filter").text(timeline_values[ui.value]);
-					     },
-					     change: function(event, ui){
-							l.setParams({ 
-								q: search 
-								+ ' and ' + facet_value + ":" 
-								+ timeline_values[ui.value] });	
-	
-							$("#current_filter").text(timeline_values[ui.value]);
-
-						     }
-					     });
-
-
-		}
 		});
 
 
