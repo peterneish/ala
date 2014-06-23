@@ -33,6 +33,7 @@
 	
 	var map = L.map('map').setView([-29, 136], 4);
 	var l;
+	var layers = [];
 	
 	// add the base layer
 	L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
@@ -58,26 +59,30 @@
 				}
 
 				facet_value = json.facetResults[0].fieldName;
+				console.log(search + ' and ' + facet_value + ":" + timeline_values[0]);
 				
-				l = L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect", {
-					layers: 'ALA:occurrences',
-					q: search,
-						format: 'image/png',
-						transparent: true,
-						attribution: "Atlas of Living Australia",
-						bgcolor:"0x000000",
-						outline:"true",
-						ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
-				});
-				
-				// set the initial view to the earliest facet (year / decade)
-				l.setParams({ 
-					q: search 
-					+ ' and ' + facet_value + ":" 
-					+ timeline_values[0] });	
-				$("#current_filter").text(timeline_values[0]);
-				
-				l.addTo(map);		
+				for (var t in timeline_values){
+					 layers.push( 
+						L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect", {
+							layers: 'ALA:occurrences',
+							q: search + ' and ' + facet_value + ":" + timeline_values[t],
+								format: 'image/png',
+								transparent: true,
+								attribution: "Atlas of Living Australia",
+								bgcolor:"0x000000",
+								outline:"true",
+								ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
+						})
+					);
+					
+					// add the first layer
+					if(t == 0){
+						layers[t].addTo(map);
+						$("#current_filter").text(timeline_values[ui.value]);
+					}	
+				}
+			
+
 
 				$("#slider").slider(
 					{  max: timeline_values.length -1,
@@ -87,16 +92,22 @@
 								$("#current_filter").text(timeline_values[ui.value]);
 							},
 					   change: function(event, ui){
-									l.setParams({ 
-										q: search 
-										+ ' and ' + facet_value + ":" 
-										+ timeline_values[ui.value] });	
+								for (l in layers){
+									if (l == ui.value){
+										map.addLayer(layers[l]);
+									}
+								    else{
+										console.log("fired");
+										map.removeLayer(layers[l]);
+									}	
 			
 									$("#current_filter").text(timeline_values[ui.value]);
-
+								}	
 					   }
 					}
 				);
+				
+
 			}
 		});
 
