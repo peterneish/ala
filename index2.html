@@ -11,12 +11,17 @@
 	 <style>
         body {  padding: 0; margin: 0; }
         html, body, #map { height: 95%; width: 100%; }
-		#slider { margin:10px; }
+		#slider {}
+		#sliderContainer {
+		    margin: 20px;
+		}
     </style>
 </head>
 <body>
 	<div id="map" ></div>
-	<div id="slider"></div>
+	<div id="sliderContainer">
+		<div id="slider"></div>
+	</div>	
 	<div id="current_filter"></div>
 
 	<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
@@ -55,7 +60,9 @@
 				// put the labels into an array for easier handling			
 				timeline_values = [];
 				for (var x in json.facetResults[0].fieldResult){
-					timeline_values.push(json.facetResults[0].fieldResult[x].label);
+					if(json.facetResults[0].fieldResult[x].label != "before"){ // not sure why these are here
+						timeline_values.push(json.facetResults[0].fieldResult[x].label);
+					}
 				}
 
 				facet_value = json.facetResults[0].fieldName;
