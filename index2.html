@@ -31,8 +31,9 @@
 	<script>
 
 
-	var search = "macropus";
+	var search = "Bufo marinus";
 	var facet_value;
+	var incremental = true;
 	var initial_facet = 'decade';
 	//var initial_facet = 'year';
 	
@@ -47,7 +48,7 @@
 		id: 'examples.map-i86knfo3'
 	}).addTo(map);
 
-        	// now get the ALA data - say Eucalypts
+        	// now get the ALA data
         $.ajax({
             url: 'http://biocache.ala.org.au/ws/occurrences/search.json?q=' + search 
 				+ '&facets=' + initial_facet 
@@ -69,16 +70,24 @@
 				console.log(search + ' and ' + facet_value + ":" + timeline_values[0]);
 				
 				for (var t in timeline_values){
+					var filterquery;
+					if(incremental){
+						// we do a range query that acumulates data as we get later
+						filterquery = facet_value + ":[" + timeline_values[0] +" TO " + timeline_values[t] + "]";
+					}
+					else{
+						filterquery = facet_value + ":" + timeline_values[t];
+					}
 					 layers.push( 
-						L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect", {
+						L.tileLayer.wms("http://biocache.ala.org.au/ws/webportal/wms/reflect?fq=" + filterquery, {
 							layers: 'ALA:occurrences',
-							q: search + ' and ' + facet_value + ":" + timeline_values[t],
-								format: 'image/png',
-								transparent: true,
-								attribution: "Atlas of Living Australia",
-								bgcolor:"0x000000",
-								outline:"true",
-								ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
+							q: search,							
+							format: 'image/png',
+							transparent: true,
+							attribution: "Atlas of Living Australia",
+							bgcolor:"0x000000",
+							outline:"true",
+							ENV: "color:5574a6;name:circle;size:4;opacity:1;colormode:grid"
 						})
 					);
 					
@@ -99,17 +108,16 @@
 								$("#current_filter").text(timeline_values[ui.value]);
 							},
 					   change: function(event, ui){
-								for (l in layers){
-									if (l == ui.value){
-										map.addLayer(layers[l]);
-									}
-								    else{
-										console.log("fired");
-										map.removeLayer(layers[l]);
+								map.addLayer(layers[ui.value]);
+								$("#current_filter").text(timeline_values[ui.value]);
+								// when loaded - remove other layers
+								layers[ui.value].on('load', function(e){
+									for (l in layers){
+										if (map.hasLayer(layers[l]) && l != ui.value){
+											map.removeLayer(layers[l]);
+										}	
 									}	
-			
-									$("#current_filter").text(timeline_values[ui.value]);
-								}	
+								});	
 					   }
 					}
 				);
